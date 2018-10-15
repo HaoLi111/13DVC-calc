@@ -1,10 +1,9 @@
-#----------------------------------
 #Generate anthropometric with z score from height
 
 #Male
 
 #stature 
-setwd('H:/Ergonomic calculation-20180923T220737Z-001/Ergonomic calculation/')
+setwd('E:/DVC')
 (data<-read.csv('anthro.csv',header=T))
 
 myheight=192
@@ -131,7 +130,7 @@ parameterize.stand<-function(myself,
                              yChair=50,
                              yTable=75,
                              Le=50,
-                             L=21.17,
+                             L=22,
                              Lk=12.5,plot=F){
   myKeypad<-fCA(ATA,yShoulder = yChair+myself[myself$type=='shoulder_sitting',2],
                  AU=myself[myself$type=='forearm',2],
@@ -143,7 +142,7 @@ parameterize.stand<-function(myself,
   myPCfromScreen<-fS(myScreen,L,ATE)
   PCxy=list(myKeyPad=myKeypad,myPCfromKeyPad=myPCfromKeyPad,
             myScreen=myScreen,myPCfromScreen)
-  MapR<-function(a,b) sqrt(sum((a-b)^2))
+  require(MFVN)
   MapR(myPCfromKeyPad,myPCfromScreen)
   if(plot==TRUE){
   plot(c(0,60),c(0,150),type='n',asp=1)
@@ -186,54 +185,11 @@ parameterize.stand(myself = myself)
 parameterize.stand(myself,ATE=pi*11/180)$Standl
 
 
-
-
-
-parameterize.stand(myself,L=22.41,ATE=pi*30/180,Le=60)
-#----------------------------------
-#loop to check Standl$hback.y+Standl$hfront.y
-
-
 ATE=(0:30)/180*pi
-le=50:70
 
-SumH<-matrix(NA,length(ATE),length(le))
-for(i in seq_along(ATE)){
-	for(j in seq_along(le)){
-		s<-parameterize.stand(myself,ATE = ATE[i],Le = le[j],L=22.41)
-		SumH[i,j]<-s$Standl['hback.y']+s$Standl['hfront.y']
-	}
+ATE_criticality<-foreach(i=ATE,.combine = rbind) %dopar% {
+  parameterize.stand(myself,ATE=i)$Standl
 }
-persp(ATE,le,SumH,phi=45,theta=45)
-hist(SumH)
-abline(v= 39.85,col='red')
-
-remove(SumH)
-SumH=NULL
-for (i in seq_along(ATE)){
-	s<-parameterize.stand(myself,ATE = ATE[i],Le = 50,L=22.41)
-	SumH[i]<-s$Standl['hback.y']+s$Standl['hfront.y']
-}
-SumH<-cbind(ATE,SumH)
-
-	df=SumH[,2]-39.85
-	adf=abs(df)
-
-summary(SumH)
-head(SumH)
-SumH[which.min(df),]
-#
-parameterize.stand(myself,ATE= 0.5235988,Le=50,L=22.41,plot=T)
-
-
-
-ATE=(0:30)/180*pi
-ATE_criticality<-matrix(NA,nrow=30,ncol=6)
-for (i in seq_along(ATE)){
-ATE_criticality[i,]=parameterize.stand(myself,ATE=ATE[i])$Standl
-}
-#
-
 ATE_criticality
 matplot(ATE_criticality[,1],ATE_criticality[,-1],type='l')
 legend(10,legend=2:ncol(ATE_criticality))
